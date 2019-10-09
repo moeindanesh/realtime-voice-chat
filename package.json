@@ -1,0 +1,24 @@
+{
+  "name": "peer2peer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"node ./server.js\" \"next\"",
+    "build": "next build",
+    "start": "concurrently \"node ./server.js\" \"next start\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^5.0.0",
+    "express": "^4.17.1",
+    "next": "^9.0.8",
+    "peerjs": "^1.1.0",
+    "react": "^16.10.2",
+    "react-dom": "^16.10.2",
+    "simple-peer": "^9.6.0",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0"
+  }
+}
