@@ -9,7 +9,17 @@ let io = socketIO(server)
 app.use(express.static(__dirname));
 
 io.on('connection', socket => {
-    console.log(`user connected`);
+    socket.on('newUser', data => {
+        console.log(`${data.name} connected`);
+        socket.broadcast.emit('newUserConnected', data);
+    })
+
+    socket.on('iAmHereToo', data => {
+        io.to(data.to).emit('addThis', {
+            userName: data.name,
+            userId: data.from
+        })
+    })
 
     socket.on('needPeer', data => {
         socket.broadcast.emit('doYou', {
