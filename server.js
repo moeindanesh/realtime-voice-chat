@@ -31,6 +31,11 @@ io.on('connection', socket => {
             theirPeer: data.thisIs
         })
     })
+    socket.on('unPeer', data => {
+        io.to(data.to).emit('deletePeer', {
+            peerId: data.from
+        })
+    })
 
     socket.on('iWantToo', data => {
         io.to(data.to).emit('answer', {

@@ -29,6 +29,7 @@ class Walkie extends React.Component {
                 reactPlayer: true
             })
         })
+
         this.socket.on('signal', data => {
             const peerId = data.from;
             if(!this.state.peers[peerId]){
@@ -40,6 +41,13 @@ class Walkie extends React.Component {
                 peer.signal(data.signal)
             }catch{
                 console.log('not signaled! :|')
+            }
+        })
+
+        this.socket.on('deletePeer', data => {
+            const peerId = data.peerId;
+            if(this.state.peers[peerId]){
+                this.destroyPeer(peerId);
             }
         })
     }
@@ -72,6 +80,7 @@ class Walkie extends React.Component {
                 to: this.props.peerId,
                 thisIs: this.socket.id
             })
+            this.destroyPeer(this.props.peerId);
             this.setState({walkieTalkie: false});
         }
         
@@ -110,6 +119,21 @@ class Walkie extends React.Component {
         this.setState({
             peers
         })
+    }
+    
+    destroyPeer(peerId){
+        const peers = { ...this.state.peers }
+        const peer = peers[peerId]
+        peer.destroy();
+        delete peers[peerId];
+        this.setState({
+            peers
+        })
+        this.socket.emit('unPeer', {
+            from: this.socket.id,
+            to: peerId
+        })
+        console.log('destroyed!');
     }
     renderPeers(){
         return Object.entries(this.state.peers).map(entry => {

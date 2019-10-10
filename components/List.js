@@ -8,7 +8,7 @@ class List extends React.Component{
             users: {},
             walkie: {}
         }
-        this.socket = IO('192.168.1.54:3001');
+        this.socket = IO('localhost:3001');
 
         this.renderList = this.renderList.bind(this);
     }
