@@ -25,9 +25,6 @@ class Walkie extends React.Component {
                 to: data.theirPeer,
                 thisIs: this.socket.id
             })
-            this.setState({
-                reactPlayer: true
-            })
         })
 
         this.socket.on('signal', data => {
@@ -36,7 +33,7 @@ class Walkie extends React.Component {
                 this.createPeer(peerId, false, null);
             }
             const peer = this.state.peers[peerId];
-
+            
             try{   
                 peer.signal(data.signal)
             }catch{
@@ -47,7 +44,10 @@ class Walkie extends React.Component {
         this.socket.on('deletePeer', data => {
             const peerId = data.peerId;
             if(this.state.peers[peerId]){
-                this.destroyPeer(peerId);
+                // this.destroyPeer(peerId);
+                this.setState({
+                    reactPlayer: false
+                })
             }
         })
     }
@@ -61,14 +61,20 @@ class Walkie extends React.Component {
                     .then(stream => {
                         this.stream = stream;
                         this.forceUpdate();
-                        this.socket.emit('peerTo', {
-                            to: this.props.peerId,
-                            thisIs: this.socket.id
-                        })
-                        this.socket.on('answer', data => {
-                            this.peerId = data.answeredPeer;
-                            this.createPeer(this.peerId, true, this.stream);
-                        })
+                        if(!this.state.peers[this.props.peerId]){
+                            this.socket.emit('peerTo', {
+                                to: this.props.peerId,
+                                thisIs: this.socket.id
+                            })
+                            this.socket.on('answer', data => {
+                                this.peerId = data.answeredPeer;
+                                this.createPeer(this.peerId, true, this.stream);
+                            })
+                        }else{
+                            const peer = this.state.peers[this.props.peerId];
+                            console.log(peer);
+                            peer.addStream(this.stream);
+                        }
                         this.setState({walkieTalkie: true});
                     }).catch(e => console.log(e))
             }else{
@@ -80,6 +86,11 @@ class Walkie extends React.Component {
                 to: this.props.peerId,
                 thisIs: this.socket.id
             })
+            let tracks = this.stream.getTracks();
+            for(let i = 0; i < tracks.length; i++){
+                tracks[i].stop();
+            }
+            
             this.destroyPeer(this.props.peerId);
             this.setState({walkieTalkie: false});
         }
@@ -107,7 +118,10 @@ class Walkie extends React.Component {
         peer.on('stream', stream => {
             console.log('stream oommaaaad!!!');
             this.setPeerState(peerId, peer);
-            this.setState({player: stream});
+            this.setState({
+                player: stream,
+                reactPlayer: true
+            });
         })
 
         this.setPeerState(peerId, peer);
@@ -124,27 +138,27 @@ class Walkie extends React.Component {
     destroyPeer(peerId){
         const peers = { ...this.state.peers }
         const peer = peers[peerId]
-        peer.destroy();
-        delete peers[peerId];
-        this.setState({
-            peers
-        })
+        peer.removeStream(this.stream);
+        console.log(peer);
+        // peer.destroy();
+        // delete peers[peerId];
+        // this.setState({
+        //     peers
+        // })
         this.socket.emit('unPeer', {
             from: this.socket.id,
             to: peerId
         })
         console.log('destroyed!');
     }
-    renderPeers(){
-        return Object.entries(this.state.peers).map(entry => {
-            const [peerId, peer] = entry
-            return <div key={peerId}>
-              <video ref={video => peer.video = video}></video>
-            </div>
-          })
+    peerAddStream(peerId){
+        const peers = { ...this.state.peers }
+        const peer = peers[peerId]
+        peer.addStream(this.stream);
     }
 
     render() {
+        this.stream ? console.log(this.stream.active) : console.log('there is no stream!');
         return (
             <div>
                 <button onClick={this.walkieTalkie.bind(this)}>{this.state.walkieTalkie? 'Talkie..': 'Walkie'}</button>
