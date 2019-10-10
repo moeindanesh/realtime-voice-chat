@@ -26,6 +26,11 @@ io.on('connection', socket => {
             theirPeer: data.thisIs
         })
     })
+    socket.on('peerTo', data => {
+        io.to(data.to).emit('doYou', {
+            theirPeer: data.thisIs
+        })
+    })
 
     socket.on('iWantToo', data => {
         io.to(data.to).emit('answer', {

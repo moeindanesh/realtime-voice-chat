@@ -1,13 +1,14 @@
 import IO from 'socket.io-client';
-
+import Walkie from './Walkie'
 class List extends React.Component{
     constructor(props){
         super(props);
         this.state = {
             myName: this.props.myId,
-            users: {}
+            users: {},
+            walkie: {}
         }
-        this.socket = IO('localhost:3001');
+        this.socket = IO('192.168.1.54:3001');
 
         this.renderList = this.renderList.bind(this);
     }
@@ -39,11 +40,33 @@ class List extends React.Component{
         })
     }
 
+    talkHandle(e){
+        const userId = e.target.id;
+
+        if(!this.state.walkie[e.target.id]){
+            const walkie = { ...this.state.walkie }
+            walkie[userId] = true;
+            this.setState({
+                walkie
+            })
+        }else{
+            const walkie = { ...this.state.walkie }
+            walkie[userId] = false;
+            this.setState({
+                walkie
+            })
+        }
+    }
+
     renderList(){
         return Object.entries(this.state.users).map( entry => {
             const [id, name] = entry;
             return (
-                <h3 key={id}>{name} : {id}</h3>
+                <div key={id}>
+                    <h3 >{name} : {id}</h3>
+                    {/* <button onClick={this.talkHandle.bind(this)} id={id}>Walkie</button> */}
+                    <Walkie peerId={id} socket={this.socket} />
+                </div>
             )
         })
     }

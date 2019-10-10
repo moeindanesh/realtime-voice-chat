@@ -3,37 +3,25 @@ import Peer from 'simple-peer';
 import ReactPlayer from 'react-player';
 
 const ioURL = 'localhost:3001';
-class Talk extends React.Component {
+class Walkie extends React.Component {
     constructor(props) {
         super(props);
+        this.socket = this.props.socket;
         this.state = {
             connect: false,
             peers: {},
             stream: null,
-            player: null
+            player: null,
+            reactPlayer: false,
+            walkieTalkie: false
         }
 
         this.componentDidMount = this.componentDidMount.bind(this);
-        this.socket = io(ioURL);
 
     }
     componentDidMount(){
         
-        const options = { audio: true, video: false };
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia(options)
-                .then(stream => {
-                    this.stream = stream;
-                    this.forceUpdate();
-                    
-                }).catch(e => console.log(e))
-        }else{
-            console.log('WTF :|');
-        }
-
-        this.socket.on('connect', () => {
-            console.log('connected to server');
-        });
+        
         this.socket.on('doYou', data => {
             console.log(`I am ${this.socket.id}`);
             console.log(`and ${data.theirPeer} wants to connect to me!`);
@@ -41,11 +29,14 @@ class Talk extends React.Component {
                 to: data.theirPeer,
                 thisIs: this.socket.id
             })
+            this.setState({
+                reactPlayer: true
+            })
         })
         this.socket.on('signal', data => {
             const peerId = data.from;
             if(!this.state.peers[peerId]){
-                this.createPeer(peerId, false, this.stream);
+                this.createPeer(peerId, false, null);
             }
             const peer = this.state.peers[peerId];
 
@@ -57,35 +48,41 @@ class Talk extends React.Component {
         })
     }
 
-    componentDidUpdate(){
-        // if(this.stream && this.video && !this.video.srcObject){
-        //     this.video.srcObject = this.stream
-        // }
-        // this.attachPeerVideos()
-    }
-    attachPeerVideos() {
-        Object.entries(this.state.peers).forEach(entry => {
-          const [peerId, peer] = entry
-          if (peer.video && !peer.video.srcObject && peer.stream) {
-            peer.video.setAttribute('data-peer-id', peerId)
-            peer.video.srcObject = peer.stream
-          }
-        })
-      }
     
-    connect() {        
-        this.socket.emit('needPeer', {
-            thisIs: this.socket.id
-        })
-        this.socket.on('answer', data => {
-            this.peerId = data.answeredPeer;
-            this.createPeer(this.peerId, true, this.stream);
-        })
+    walkieTalkie() {        
+        if(!this.state.walkieTalkie){
+            const options = { audio: true, video: false };
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia(options)
+                    .then(stream => {
+                        this.stream = stream;
+                        this.forceUpdate();
+                        this.socket.emit('peerTo', {
+                            to: this.props.peerId,
+                            thisIs: this.socket.id
+                        })
+                        this.socket.on('answer', data => {
+                            this.peerId = data.answeredPeer;
+                            this.createPeer(this.peerId, true, this.stream);
+                        })
+                        this.setState({walkieTalkie: true});
+                    }).catch(e => console.log(e))
+            }else{
+                console.log('WTF :|');
+            }
+            
+        }else{
+            this.socket.emit('unPeer', {
+                to: this.props.peerId,
+                thisIs: this.socket.id
+            })
+            this.setState({walkieTalkie: false});
+        }
         
     }
 
     createPeer(peerId, initiator, stream){
-        const peer = new Peer({initiator: initiator, trickle: true, stream});
+        const peer = new Peer({initiator: initiator, trickle: true, stream: stream});
 
         peer.on('signal', signal => {
             const msgId = (new Date().getTime);
@@ -135,16 +132,11 @@ class Talk extends React.Component {
         // console.log(this.stream);
         return (
             <div>
-                <button onClick={this.connect.bind(this)}>connect</button>
-                <ReactPlayer url={this.state.player} playing/>
-                {/* {this.renderPeers()} */}
-                <div id="me">
-                    {/* <video id="myVideo" ref={video => this.video = video} controls></video> */}
-                </div>
-                {/* <div id="peers">{this.renderPeers()}</div> */}
+                <button onClick={this.walkieTalkie.bind(this)}>{this.state.walkieTalkie? 'Talkie..': 'Walkie'}</button>
+                {this.state.reactPlayer? <ReactPlayer url={this.state.player} playing/> : ''}
             </div>
         )
     }
 }
 
-export default Talk;
+export default Walkie;
