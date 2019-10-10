@@ -1,8 +1,6 @@
-import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import ReactPlayer from 'react-player';
 
-const ioURL = 'localhost:3001';
 class Walkie extends React.Component {
     constructor(props) {
         super(props);
@@ -20,8 +18,6 @@ class Walkie extends React.Component {
 
     }
     componentDidMount(){
-        
-        
         this.socket.on('doYou', data => {
             console.log(`I am ${this.socket.id}`);
             console.log(`and ${data.theirPeer} wants to connect to me!`);
@@ -93,9 +89,6 @@ class Walkie extends React.Component {
         peer.on('connect', () => {
             console.log('connected to peer');
             this.setPeerState(peerId, peer);
-            // peer.send(JSON.stringify({
-            //     msg: 'Hey :))'
-            // }));
         })
 
         peer.on('data', data => {
@@ -104,7 +97,6 @@ class Walkie extends React.Component {
 
         peer.on('stream', stream => {
             console.log('stream oommaaaad!!!');
-            // console.log(stream);
             this.setPeerState(peerId, peer);
             this.setState({player: stream});
         })
@@ -129,7 +121,6 @@ class Walkie extends React.Component {
     }
 
     render() {
-        // console.log(this.stream);
         return (
             <div>
                 <button onClick={this.walkieTalkie.bind(this)}>{this.state.walkieTalkie? 'Talkie..': 'Walkie'}</button>
