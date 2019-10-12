@@ -6,10 +6,12 @@ class List extends React.Component{
         this.state = {
             myName: this.props.myId,
             users: {},
-            walkie: {}
+            walkie: {},
+            peerId: undefined
         }
         this.socket = IO('localhost:3001');
 
+        this.talkHandle = this.talkHandle.bind(this);
         this.renderList = this.renderList.bind(this);
     }
     componentDidMount(){
@@ -17,6 +19,7 @@ class List extends React.Component{
             console.log('connected to server');
             this.socket.emit('newUser', {from: this.socket.id, name: this.state.myName})
         });
+
         this.socket.on('newUserConnected', data => {
             const userId = data.from;
             const users = { ...this.state.users };
@@ -30,6 +33,7 @@ class List extends React.Component{
                 name: this.state.myName
             })
         })
+
         this.socket.on('addThis', data => {
             const userId = data.userId;
             const users = { ...this.state.users }
@@ -38,24 +42,24 @@ class List extends React.Component{
                 users
             })
         })
+
+        this.socket.on('userDisconnected', data => {
+            const userId = data.userId;
+            const users = { ...this.state.users}
+            delete users[userId];
+            this.setState({
+                users
+            })
+        })
     }
 
     talkHandle(e){
-        const userId = e.target.id;
-
-        if(!this.state.walkie[e.target.id]){
-            const walkie = { ...this.state.walkie }
-            walkie[userId] = true;
-            this.setState({
-                walkie
-            })
-        }else{
-            const walkie = { ...this.state.walkie }
-            walkie[userId] = false;
-            this.setState({
-                walkie
-            })
-        }
+        // this.state.walie
+        const peerId = e.target.id;
+        this.setState({
+            peerId
+        })
+        
     }
 
     renderList(){
@@ -64,8 +68,7 @@ class List extends React.Component{
             return (
                 <div key={id}>
                     <h3 >{name} : {id}</h3>
-                    {/* <button onClick={this.talkHandle.bind(this)} id={id}>Walkie</button> */}
-                    <Walkie peerId={id} socket={this.socket} />
+                    <button onClick={this.talkHandle.bind(this)} id={id}>talk to this guy...</button>
                 </div>
             )
         })
@@ -76,6 +79,7 @@ class List extends React.Component{
             <div>
                 <h1>List of online users</h1>
                 {this.renderList()}
+                <Walkie peerId={this.state.peerId} socket={this.socket} />
             </div>
         )
     }

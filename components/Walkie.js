@@ -52,6 +52,7 @@ class Walkie extends React.Component {
                 })
             }
         })
+
     }
 
     startWalkieTalkie() {    
@@ -96,7 +97,7 @@ class Walkie extends React.Component {
 
     createPeer(peerId, initiator, stream){
         const peer = new Peer({initiator: initiator, trickle: true, stream: stream});
-
+        console.log(`create peer method!`);
         peer.on('signal', signal => {
             const msgId = (new Date().getTime);
             const msg = { msgId, signal, to: peerId}

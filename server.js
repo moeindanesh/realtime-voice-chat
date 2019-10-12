@@ -55,6 +55,13 @@ io.on('connection', socket => {
             console.log('receiver is not online!');
         }
     })
+
+    socket.on('disconnect', reason => {
+        console.log(`${socket.id} disconnected`);
+        socket.broadcast.emit('userDisconnected', {
+            userId: socket.id
+        })
+    })
 })
 
 server.listen(3001, () => {
