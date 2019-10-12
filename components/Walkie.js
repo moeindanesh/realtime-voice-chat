@@ -17,10 +17,11 @@ class Walkie extends React.Component {
         this.componentDidMount = this.componentDidMount.bind(this);
 
     }
+
     componentDidMount(){
         this.socket.on('doYou', data => {
-            console.log(`I am ${this.socket.id}`);
-            console.log(`and ${data.theirPeer} wants to connect to me!`);
+            // console.log(`I am ${this.socket.id}`);
+            // console.log(`and ${data.theirPeer} wants to connect to me!`);
             this.socket.emit('iWantToo', {
                 to: data.theirPeer,
                 thisIs: this.socket.id
@@ -30,6 +31,7 @@ class Walkie extends React.Component {
         this.socket.on('signal', data => {
             const peerId = data.from;
             if(!this.state.peers[peerId]){
+                console.log('dare khat mide!');
                 this.createPeer(peerId, false, null);
             }
             const peer = this.state.peers[peerId];
@@ -52,49 +54,44 @@ class Walkie extends React.Component {
         })
     }
 
-    
-    walkieTalkie() {        
-        if(!this.state.walkieTalkie){
-            const options = { audio: true, video: false };
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia(options)
-                    .then(stream => {
-                        this.stream = stream;
-                        this.forceUpdate();
-                        if(!this.state.peers[this.props.peerId]){
-                            this.socket.emit('peerTo', {
-                                to: this.props.peerId,
-                                thisIs: this.socket.id
-                            })
-                            this.socket.on('answer', data => {
-                                this.peerId = data.answeredPeer;
-                                this.createPeer(this.peerId, true, this.stream);
-                            })
-                        }else{
-                            const peer = this.state.peers[this.props.peerId];
-                            console.log(peer);
-                            peer.addStream(this.stream);
-                        }
-                        this.setState({walkieTalkie: true});
-                    }).catch(e => console.log(e))
-            }else{
-                console.log('WTF :|');
-            }
-            
+    startWalkieTalkie() {    
+        const options = { audio: true, video: false};
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia(options)
+                .then(stream => {
+                    this.stream = stream;
+                    this.forceUpdate();
+                    if(!this.state.peers[this.props.peerId]){
+                        this.socket.emit('peerTo', {
+                            to: this.props.peerId,
+                            thisIs: this.socket.id
+                        })
+                        this.socket.on('answer', data => {
+                            this.peerId = data.answeredPeer;
+                            this.createPeer(this.peerId, true, this.stream);
+                        })
+                    }else{
+                        const peer = this.state.peers[this.props.peerId];
+                        peer.addStream(this.stream);
+                    }
+                }).catch(e => console.log(e))
         }else{
-            this.socket.emit('unPeer', {
-                to: this.props.peerId,
-                thisIs: this.socket.id
-            })
-            let tracks = this.stream.getTracks();
-            for(let i = 0; i < tracks.length; i++){
-                tracks[i].stop();
-            }
-            
-            this.destroyPeer(this.props.peerId);
-            this.setState({walkieTalkie: false});
-        }
-        
+            console.log('stream not created!');
+        }            
+        this.setState({walkieTalkie: true});
+    }
+
+    stopWalkieTalkie(){
+        this.socket.emit('unPeer', {
+            to: this.props.peerId,
+            thisIs: this.socket.id
+        })
+        let tracks = this.stream.getTracks();
+        for(let i = 0; i < tracks.length; i++){
+            tracks[i].stop();
+        } 
+        this.destroyPeer(this.props.peerId);
+        this.setState({walkieTalkie: false});
     }
 
     createPeer(peerId, initiator, stream){
@@ -158,10 +155,10 @@ class Walkie extends React.Component {
     }
 
     render() {
-        this.stream ? console.log(this.stream.active) : console.log('there is no stream!');
+        this.stream ? console.log('stream available') : console.log('there is no stream!');
         return (
             <div>
-                <button onClick={this.walkieTalkie.bind(this)}>{this.state.walkieTalkie? 'Talkie..': 'Walkie'}</button>
+                <button onClick={!this.state.walkieTalkie ? this.startWalkieTalkie.bind(this) : this.stopWalkieTalkie.bind(this)}>{this.state.walkieTalkie? 'stop': 'start'}</button>
                 {this.state.reactPlayer? <ReactPlayer url={this.state.player} playing/> : ''}
             </div>
         )

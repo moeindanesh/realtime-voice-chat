@@ -1,3 +1,5 @@
+import Peer from './Peer';
+
 class Login extends React.Component{
     constructor(props){
         super(props);
